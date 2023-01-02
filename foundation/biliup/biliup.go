@@ -158,6 +158,11 @@ func (b *Biliup) newVideoMetadata(videoFilepath string) error {
 		Tid:      21, // 日常
 		Tag:      "日常,生活,vlog",
 		Source:   "www",
+		// UpType:   1,
+		// Cover:    "",
+		// Tid:      21, // 日常
+		// Tag:      "vlog",
+		// Source:   "",
 	}
 
 	return nil
