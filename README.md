@@ -10,16 +10,24 @@
 
 [简体中文](https://go-olive.github.io/) | English
 
+## Sponsor
+
+<a href="https://olived.app" target="_blank">
+  <img src="https://raw.githubusercontent.com/go-olive/brand-kit/main/icon/appicon.png" width=142 height=142 />
+</a>
+
+[Olived | 录播从未如此简单](https://olived.app)
+
 ## Installation
 
 - build from source
 
-    `go install github.com/go-olive/olive@latest`
+  `go install github.com/go-olive/olive@latest`
 
 - download from [**releases**](https://github.com/go-olive/olive/releases)
 
 - docker image
-    `docker pull luxcgo/olive`
+  `docker pull luxcgo/olive`
 
 ## Quickstart
 
@@ -35,7 +43,7 @@ $ olive run -u https://www.huya.com/518512
 $ olive help
 
 olive is a live stream recorder, underneath there is a powerful engine
-which monitors streamers status and automatically records when they're 
+which monitors streamers status and automatically records when they're
 online. It helps you catch every live stream you want to see.
 
 Usage:
