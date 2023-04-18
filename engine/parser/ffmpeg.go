@@ -60,7 +60,7 @@ func (p *ffmpeg) Parse(streamURL string, out string) (err error) {
 		"-i", streamURL,
 		"-c", "copy",
 		"-bsf:a", "aac_adtstoasc",
-		"-f", "flv",
+		//"-f", "flv",
 		out,
 	)
 	// p.cmd.Stderr = os.Stderr
