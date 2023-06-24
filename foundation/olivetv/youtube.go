@@ -41,7 +41,8 @@ func (this *youtube) set(tv *TV) error {
 	// PlayerResponse
 	prb := this.playerResponseBytes(videoHTML)
 	if len(prb) == 0 {
-		return fmt.Errorf("unable to retrieve player response object from watch page")
+		// return fmt.Errorf("unable to retrieve player response object from watch page")
+		return nil
 	}
 	var pr YoutubePlayerResponse
 
