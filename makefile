@@ -3,7 +3,7 @@ SHELL := /bin/bash
 # ==============================================================================
 # Building containers
 
-VERSION := 0.5.2
+VERSION := 0.5.3
 
 all: olivectl
 
