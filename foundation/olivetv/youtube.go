@@ -3,9 +3,10 @@ package olivetv
 import (
 	"bytes"
 	"fmt"
+	"io"
+	"net/http"
 	"time"
 
-	"github.com/imroc/req/v3"
 	jsoniter "github.com/json-iterator/go"
 	"golang.org/x/net/html"
 )
@@ -32,11 +33,22 @@ func (this *youtube) Snap(tv *TV) error {
 
 func (this *youtube) set(tv *TV) error {
 	liveURL := fmt.Sprintf("https://www.youtube.com/%s/live", tv.RoomID)
-	resp, err := req.C().R().Get(liveURL)
+
+	// resp, err := req.C().R().Get(liveURL)
+	// if err != nil {
+	// 	return fmt.Errorf("get video url failed: %w", err)
+	// }
+	// videoHTML := resp.Bytes()
+
+	resp, err := http.Get(liveURL)
 	if err != nil {
-		return fmt.Errorf("get video url failed: %w", err)
+		return err
 	}
-	videoHTML := resp.Bytes()
+	content, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+	videoHTML := content
 
 	// PlayerResponse
 	prb := this.playerResponseBytes(videoHTML)
