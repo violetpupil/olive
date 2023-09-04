@@ -57,7 +57,9 @@ func (this *douyin) set(tv *TV) error {
 	resp := fmt.Sprint(req.ResponseData)
 	splits := strings.Split(resp, `<script id="RENDER_DATA" type="application/json">`)
 	if len(splits) < 2 {
-		return fmt.Errorf("fail to find url")
+		// 优化日志输出
+		// return fmt.Errorf("fail to find url")
+		return nil
 	}
 	resp = splits[1]
 	resp = strings.Split(resp, `</script>`)[0]
