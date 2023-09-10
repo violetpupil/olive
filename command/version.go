@@ -6,7 +6,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var build = "v0.5.5-src"
+var build = "v0.5.7-src"
 
 var _ cmder = (*versionCmd)(nil)
 
