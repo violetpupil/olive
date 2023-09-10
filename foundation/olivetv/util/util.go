@@ -4,7 +4,7 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"errors"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"regexp"
 )
@@ -22,7 +22,7 @@ func GetURLContent(url string) (string, error) {
 		return "", err
 	}
 	defer resp.Body.Close()
-	respBody, err := ioutil.ReadAll(resp.Body)
+	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", err
 	}
@@ -44,6 +44,22 @@ func Match(pattern, content string) (string, error) {
 		return "", errors.New("pattern not found")
 	}
 	return res[0], nil
+}
+
+func MatchArr(pattern, content string) ([]string, error) {
+	re, err := regexp.Compile(pattern)
+	if err != nil {
+		return nil, err
+	}
+	submatch := re.FindAllStringSubmatch(content, -1)
+	res := make([]string, 0)
+	for _, v := range submatch {
+		res = append(res, string(v[1]))
+	}
+	if len(res) < 1 {
+		return nil, errors.New("pattern not found")
+	}
+	return res, nil
 }
 
 func GetMd5Hash(text string) string {

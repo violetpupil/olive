@@ -2,10 +2,14 @@ package olivetv
 
 import (
 	"errors"
+	"fmt"
+	"math/rand"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/go-olive/olive/foundation/olivetv/model"
+	"github.com/go-olive/olive/foundation/olivetv/util"
 	"github.com/imroc/req/v3"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/tidwall/gjson"
@@ -21,6 +25,8 @@ func init() {
 
 type douyin struct {
 	base
+
+	failedCounter atomic.Int32
 }
 
 func (this *douyin) Name() string {
@@ -34,22 +40,103 @@ func (this *douyin) Snap(tv *TV) error {
 	return this.set(tv)
 }
 
-const CHROME = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36"
-
 func (this *douyin) set(tv *TV) error {
-	const douyincookie = `ttwid=1%7CcfLDfqNkk8o-IKEppAbVXFkCcglSlTQbXQ-sOIZqeT0%7C1693836521%7C5a64077ccdaa38c03827e07363efbb814bd9000c50c9e3247146015388928089; home_can_add_dy_2_desktop=%220%22; strategyABtestKey=%221693836522.123%22; stream_recommend_feed_params=%22%7B%5C%22cookie_enabled%5C%22%3Atrue%2C%5C%22screen_width%5C%22%3A1920%2C%5C%22screen_height%5C%22%3A1080%2C%5C%22browser_online%5C%22%3Atrue%2C%5C%22cpu_core_num%5C%22%3A8%2C%5C%22device_memory%5C%22%3A8%2C%5C%22downlink%5C%22%3A10%2C%5C%22effective_type%5C%22%3A%5C%224g%5C%22%2C%5C%22round_trip_time%5C%22%3A50%7D%22; FORCE_LOGIN=%7B%22videoConsumedRemainSeconds%22%3A180%7D; volume_info=%7B%22isUserMute%22%3Afalse%2C%22isMute%22%3Afalse%2C%22volume%22%3A0.5%7D; passport_csrf_token=c5b117b9f262acf5d07f6a29b0425ab4; passport_csrf_token_default=c5b117b9f262acf5d07f6a29b0425ab4; odin_tt=d490a5b68981828937351d90d52d717fdcacd3f038f0f0505efb8a203d40e9744b5fbefe9c259879d1bffcc91a39d608a958d6584b53bb2fa9b6cc07b10777baa725728e6fa2f25940f68182b681f731; VIDEO_FILTER_MEMO_SELECT=%7B%22expireTime%22%3A1694441331554%2C%22type%22%3A1%7D; IsDouyinActive=false; msToken=ctKJrLjrxRieZ2vWcv0ZCTcFAtLdtAMSSSBw85YkTNegSzakztz0H8UIiJSAZ0CKv1gq5EqxVUe8lt1XDBKjpQ-JGwfhNpN3iVyb1ntT45xSYT5c6g==`
-	if tv.cookie == "" || strings.Contains(tv.cookie, "ac_nonce") {
-		tv.cookie = douyincookie
+	url := "https://live.douyin.com/" + tv.RoomID
+	cookie := tv.cookie
+	if cookie == "" {
+		cookie = "__ac_nonce=" + this.AcNonce()
 	}
-	api := `https://live.douyin.com/webcast/room/web/enter/?aid=6383&live_id=1&device_platform=web&language=zh-CN&enter_from=web_live&cookie_enabled=true&screen_width=1536&screen_height=864&browser_language=zh-CN&browser_platform=Win32&browser_name=Chrome&browser_version=94.0.4606.81&room_id_str=&enter_source=&web_rid=` +
-		tv.RoomID
-	resp, err := req.C().R().
+	resp, err := req.C().R().SetHeaders(
+		map[string]string{
+			"accept":        "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9",
+			"referer":       "https://live.douyin.com/",
+			HeaderUserAgent: CHROME,
+			HeaderCookie:    cookie,
+		}).
+		Get(url)
+	if err != nil {
+		return err
+	}
+
+	tv.streamerName, _ = util.Match(`live-room-nickname">([^<]+)<`, resp.String())
+	tv.roomName, _ = util.Match(`live-room-name">([^<]+)<`, resp.String())
+
+	if !strings.Contains(resp.String(), `\"status\":2`) {
+		return nil
+	}
+
+	tv.roomOn = true
+
+	setURL := func() error {
+		// f, _ := os.Create("a.html")
+		// f.WriteString(resp.String())
+		// f.Close()
+		// text := `self.__pace_f.push([1,"{\"common\":3}"])`
+		text := resp.String()
+		matchArr, err := util.MatchArr(`self\.__pace_f\.push\(\[1,"(\{.*?\})"\]\)`, text)
+		if err != nil {
+			return err
+		}
+
+		match := matchArr[0]
+		matchArrLen := len(matchArr)
+		if matchArrLen > 2 {
+			match = matchArr[matchArrLen-2]
+		}
+
+		// log.Println(match)
+		match = fmt.Sprintf(`"%s"`, match)
+		err = jsoniter.UnmarshalFromString(match, &match)
+		if err != nil {
+			return err
+		}
+
+		flv := gjson.Get(match, "data.origin.main.flv").String()
+		hls := gjson.Get(match, "data.origin.main.hls").String()
+		_ = hls
+		tv.streamURL = flv
+
+		// f, _ = os.Create("a.json")
+		// f.WriteString(match)
+		// f.Close()
+		return nil
+	}
+
+	const failedMax = 100
+	if this.failedCounter.Load() > failedMax {
+		return setURL()
+	}
+
+	err = this.setURL2(tv)
+	if err != nil || tv.streamURL == "" {
+		this.failedCounter.Add(1)
+		return setURL()
+	}
+
+	return nil
+}
+
+func (this *douyin) setURL2(tv *TV) error {
+	tv.cookie = this.getCookie(tv)
+
+	api := `https://live.douyin.com/webcast/room/web/enter/`
+	resp, err := req.R().
 		SetHeaders(map[string]string{
-			"User-Agent":      CHROME,
+			HeaderUserAgent:   CHROME,
 			"referer":         "https://live.douyin.com/",
 			"cookie":          tv.cookie,
 			"Accept":          "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
 			"Accept-Language": "zh-CN,zh;q=0.8,zh-TW;q=0.7,zh-HK;q=0.5,en-US;q=0.3,en;q=0.2",
+			"Cache-Control":   "no-cache",
+		}).
+		SetQueryParams(map[string]string{
+			"aid":              "6383",
+			"device_platform":  "web",
+			"browser_language": "zh-CN",
+			"browser_platform": "Win32",
+			"browser_name":     "Chrome",
+			"browser_version":  "92.0.4515.159",
+			"web_rid":          tv.RoomID,
 		}).
 		Get(api)
 	if err != nil {
@@ -57,6 +144,11 @@ func (this *douyin) set(tv *TV) error {
 	}
 	// log.Println(api)
 	text := resp.String()
+
+	if !strings.Contains(text, "data") {
+		return errors.New("empty text = " + text)
+	}
+
 	text = gjson.Get(text, "data.data.0").String()
 	// 抖音 status == 2 代表是开播的状态
 	if gjson.Get(text, "status").String() != "2" {
@@ -70,9 +162,53 @@ func (this *douyin) set(tv *TV) error {
 		return err
 	}
 	flv := streamData.Data.Origin.Main.Flv
+	hls := streamData.Data.Origin.Main.Hls
+	_ = hls
 	tv.streamURL = flv
 	tv.roomOn = true
+
 	tv.roomName = gjson.Get(text, "title").String()
 
 	return nil
+}
+
+func (this *douyin) getCookie(tv *TV) string {
+	return this.generateCookie(tv)
+}
+
+func (this *douyin) generateCookie(tv *TV) string {
+	url := "https://live.douyin.com/" + tv.RoomID
+	cookie := "__ac_nonce=" + this.AcNonce()
+	resp, err := req.C().R().SetHeaders(
+		map[string]string{
+			"accept":        "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9",
+			HeaderUserAgent: CHROME,
+			HeaderCookie:    cookie,
+		}).
+		Get(url)
+	if err != nil {
+		return ""
+	}
+	tv.streamerName, _ = util.Match(`live-room-nickname">([^<]+)<`, resp.String())
+	var ttwid string
+	for _, c := range resp.Cookies() {
+		// log.Println(c.Name, c.Value)
+		if c.Name == "ttwid" {
+			ttwid = c.Value
+		}
+	}
+	if ttwid != "" {
+		cookie += "; ttwid=" + ttwid
+	}
+
+	return cookie
+}
+
+func (this *douyin) AcNonce() string {
+	arr := make([]string, 21)
+	cands := strings.Split("1234567890abcdef", "")
+	for i := range arr {
+		arr[i] = cands[rand.Intn(len(cands))]
+	}
+	return strings.Join(arr, "")
 }
