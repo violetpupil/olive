@@ -15,6 +15,7 @@ BiliupEnable = false
 CookieFilepath = '/Users/lucas/github/olive/cookies.json'
 Threads = 6
 MaxBytesPerSecond = 2097152
+PostCmdsRetryCount = 2
 
 [[Shows]]
 ID = 'a'

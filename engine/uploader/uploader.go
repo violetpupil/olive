@@ -5,6 +5,7 @@ import (
 	"os/exec"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/go-olive/olive/engine/config"
 	"github.com/sirupsen/logrus"
@@ -56,15 +57,26 @@ func (u *uploader) proc() {
 				"filepath":    u.taskGroup.Filepath,
 			}).Info("cmd start running")
 			handler := DefaultTaskMux.MustGetHandler(postCmd.Path)
-			err := handler.Process(
-				&Task{
-					log:      u.log,
-					cfg:      u.cfg,
-					Filepath: u.taskGroup.Filepath,
-					StopChan: u.stopChan,
-					Cmd:      postCmd,
-				},
-			)
+
+			retryCnt := u.cfg.PostCmdsRetryCount
+			var err error
+			for i := 0; i <= retryCnt; i++ {
+				if i != 0 {
+					time.Sleep(time.Minute)
+				}
+				err = handler.Process(
+					&Task{
+						log:      u.log,
+						cfg:      u.cfg,
+						Filepath: u.taskGroup.Filepath,
+						StopChan: u.stopChan,
+						Cmd:      postCmd,
+					},
+				)
+				if err == nil {
+					break
+				}
+			}
 			if err != nil {
 				u.log.WithFields(logrus.Fields{
 					"postCmdPath": postCmd.Path,

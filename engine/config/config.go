@@ -28,6 +28,8 @@ var DefaultConfig = Config{
 	// tv
 	DouyinCookie:   "default:__ac_nonce=06245c89100e7ab2dd536; __ac_signature=_02B4Z6wo00f01LjBMSAAAIDBwA.aJ.c4z1C44TWAAEx696;",
 	KuaishouCookie: "did=web_d86297aa2f579589b8abc2594b0ea985",
+
+	PostCmdsRetryCount: 2,
 }
 
 type Config struct {
@@ -44,6 +46,7 @@ type Config struct {
 	SplitRestSeconds         uint
 	CommanderPoolSize        uint
 	ParserMonitorRestSeconds uint
+	PostCmdsRetryCount       int
 
 	// tv
 	DouyinCookie   string
