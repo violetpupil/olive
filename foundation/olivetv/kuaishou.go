@@ -2,7 +2,6 @@ package olivetv
 
 import (
 	"errors"
-	"fmt"
 	"regexp"
 	"sort"
 	"time"
@@ -60,7 +59,7 @@ func (this *kuaishou) set(tv *TV) error {
 	tv.streamerName = gjson.Get(text, "liveroom.author.name").String()
 
 	tv.roomOn = gjson.Get(text, "liveroom.isLiving").Bool()
-	fmt.Println("tv.roomOn", tv.roomOn)
+	// fmt.Println("tv.roomOn", tv.roomOn)
 	if !tv.roomOn {
 		return nil
 	}
