@@ -18,7 +18,7 @@ require (
 	github.com/google/go-cmp v0.5.9
 	github.com/google/uuid v1.3.0
 	github.com/imdario/mergo v0.3.12
-	github.com/imroc/req/v3 v3.41.10
+	github.com/imroc/req/v3 v3.41.12
 	github.com/jmoiron/sqlx v1.3.5
 	github.com/json-iterator/go v1.1.12
 	github.com/lib/pq v1.10.7
@@ -64,7 +64,7 @@ require (
 	github.com/quic-go/qpack v0.4.0 // indirect
 	github.com/quic-go/qtls-go1-20 v0.3.3 // indirect
 	github.com/quic-go/quic-go v0.38.1 // indirect
-	github.com/refraction-networking/utls v1.5.2 // indirect
+	github.com/refraction-networking/utls v1.5.3 // indirect
 	github.com/spf13/afero v1.8.2 // indirect
 	github.com/spf13/cast v1.5.0 // indirect
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
