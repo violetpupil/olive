@@ -78,17 +78,33 @@ func (this *douyin) set(tv *TV) error {
 			return err
 		}
 
-		match := matchArr[0]
-		matchArrLen := len(matchArr)
-		if matchArrLen > 2 {
-			match = matchArr[matchArrLen-2]
+		streamIDMap := make(map[string][]string)
+		for _, match := range matchArr {
+			match = fmt.Sprintf(`"%s"`, match)
+			err = jsoniter.UnmarshalFromString(match, &match)
+			if err != nil {
+				return err
+			}
+			streamID := gjson.Get(match, "common.stream").String()
+			streamIDMap[streamID] = append(streamIDMap[streamID], match)
 		}
 
-		// log.Println(match)
-		match = fmt.Sprintf(`"%s"`, match)
-		err = jsoniter.UnmarshalFromString(match, &match)
-		if err != nil {
-			return err
+		getMatch := func() string {
+			for _, streamArr := range streamIDMap {
+				if len(streamArr) >= 2 {
+					for _, v := range streamArr {
+						if strings.Contains(v, "_or4") {
+							return v
+						}
+					}
+				}
+			}
+			return ""
+		}
+
+		match := getMatch()
+		if match == "" {
+			return errors.New("douyin: no match")
 		}
 
 		flv := gjson.Get(match, "data.origin.main.flv").String()
