@@ -28,6 +28,7 @@ type runCmd struct {
 	cfgFilepath string
 	roomURL     string
 	cookie      string
+	proxy       string
 
 	*baseBuilderCmd
 
@@ -52,6 +53,7 @@ func (b *commandsBuilder) newRunCmd() *runCmd {
 
 	cmd.Flags().StringVarP(&cc.roomURL, "url", "u", "", "room url")
 	cmd.Flags().StringVarP(&cc.cookie, "cookie", "c", "", "http cookie")
+	cmd.Flags().StringVarP(&cc.proxy, "proxy", "p", "", "proxy url")
 
 	cmd.Flags().StringVarP(&cc.logDir, "logdir", "l", "", "log file directory")
 	cmd.Flags().StringVarP(&cc.saveDir, "savedir", "s", "", "video file directory")
@@ -152,7 +154,7 @@ func (c *runCmd) run() error {
 }
 
 func (c *runCmd) runWithURL() error {
-	cc, err := newCompositeConfig(c.roomURL, c.cookie)
+	cc, err := newCompositeConfig(c.roomURL, c.cookie, c.proxy)
 	if err != nil {
 		return err
 	}
@@ -200,12 +202,15 @@ func (c *runCmd) runWithURL() error {
 	}
 }
 
-func newCompositeConfig(roomURL, cookie string) (*CompositeConfig, error) {
+func newCompositeConfig(roomURL, cookie, proxy string) (*CompositeConfig, error) {
 
 	// initialize Shows
 	if cookie != "" {
 		config.DefaultConfig.DouyinCookie = cookie
 		config.DefaultConfig.KuaishouCookie = cookie
+	}
+	if proxy != "" {
+		config.DefaultConfig.TikTokProxy = proxy
 	}
 
 	show, err := newShow(roomURL, cookie)

@@ -28,6 +28,7 @@ var DefaultConfig = Config{
 	// tv
 	DouyinCookie:   "",
 	KuaishouCookie: "",
+	TikTokProxy:    "",
 
 	PostCmdsRetryCount: 2,
 }
@@ -51,6 +52,7 @@ type Config struct {
 	// tv
 	DouyinCookie   string
 	KuaishouCookie string
+	TikTokProxy    string
 
 	// biliup
 	BiliupEnable      bool

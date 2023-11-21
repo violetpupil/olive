@@ -87,6 +87,8 @@ func (b *bout) Snap() error {
 		return b.TV.SnapWithCookie(b.cfg.DouyinCookie)
 	case "kuaishou":
 		return b.TV.SnapWithCookie(b.cfg.KuaishouCookie)
+	case "tiktok":
+		return b.TV.SnapWithProxy(b.cfg.TikTokProxy)
 	default:
 		return b.TV.Snap()
 	}

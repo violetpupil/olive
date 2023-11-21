@@ -35,6 +35,7 @@ type TV struct {
 	RoomID string
 
 	cookie string
+	proxy  string
 
 	*Info
 }
@@ -105,6 +106,18 @@ func (tv *TV) SnapWithCookie(cookie string) error {
 		return errors.New("tv is nil")
 	}
 	tv.cookie = cookie
+	site, ok := Sniff(tv.SiteID)
+	if !ok {
+		return fmt.Errorf("site(ID = %s) not supported", tv.SiteID)
+	}
+	return site.Snap(tv)
+}
+
+func (tv *TV) SnapWithProxy(proxy string) error {
+	if tv == nil {
+		return errors.New("tv is nil")
+	}
+	tv.proxy = proxy
 	site, ok := Sniff(tv.SiteID)
 	if !ok {
 		return fmt.Errorf("site(ID = %s) not supported", tv.SiteID)

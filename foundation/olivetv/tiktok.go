@@ -32,7 +32,7 @@ func (this *tiktok) Snap(tv *TV) error {
 
 func (this *tiktok) set(tv *TV) error {
 	liveURL := fmt.Sprintf("https://www.tiktok.com/@%s/live", tv.RoomID)
-	resp, err := req.C().R().
+	resp, err := req.C().SetProxyURL(tv.proxy).R().
 		SetHeaders(map[string]string{
 			"Referer":    liveURL,
 			"User_Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36",
