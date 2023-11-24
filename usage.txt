@@ -1,0 +1,11 @@
+go build  -o olive.exe .
+
+set GOOS=darwin
+set CGO_ENABLED=0
+go build -o olive-darwin .
+
+set GOOS=linux
+set CGO_ENABLED=0
+go build -o olive-linux .
+
+olive.exe run -u url -p proxy --splitRule {\"Duration\":\"10s\"}
