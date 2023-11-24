@@ -21,7 +21,7 @@ var DefaultConfig = Config{
 	OutTmpl:                  `[{{ .StreamerName }}][{{ .RoomName }}][{{ now | date "2006-01-02 15-04-05"}}].flv`,
 	LogLevel:                 5,
 	SnapRestSeconds:          15,
-	SplitRestSeconds:         60,
+	SplitRestSeconds:         10,
 	CommanderPoolSize:        1,
 	ParserMonitorRestSeconds: 300,
 

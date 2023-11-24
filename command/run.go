@@ -32,8 +32,9 @@ type runCmd struct {
 
 	*baseBuilderCmd
 
-	logDir  string
-	saveDir string
+	logDir    string
+	saveDir   string
+	splitRule string
 }
 
 func (b *commandsBuilder) newRunCmd() *runCmd {
@@ -57,6 +58,7 @@ func (b *commandsBuilder) newRunCmd() *runCmd {
 
 	cmd.Flags().StringVarP(&cc.logDir, "logdir", "l", "", "log file directory")
 	cmd.Flags().StringVarP(&cc.saveDir, "savedir", "s", "", "video file directory")
+	cmd.Flags().StringVarP(&cc.splitRule, "splitRule", "", "", "video split rule")
 
 	return cc
 }
@@ -154,7 +156,7 @@ func (c *runCmd) run() error {
 }
 
 func (c *runCmd) runWithURL() error {
-	cc, err := newCompositeConfig(c.roomURL, c.cookie, c.proxy)
+	cc, err := newCompositeConfig(c.roomURL, c.cookie, c.proxy, c.splitRule)
 	if err != nil {
 		return err
 	}
@@ -202,7 +204,7 @@ func (c *runCmd) runWithURL() error {
 	}
 }
 
-func newCompositeConfig(roomURL, cookie, proxy string) (*CompositeConfig, error) {
+func newCompositeConfig(roomURL, cookie, proxy, sr string) (*CompositeConfig, error) {
 
 	// initialize Shows
 	if cookie != "" {
@@ -213,7 +215,7 @@ func newCompositeConfig(roomURL, cookie, proxy string) (*CompositeConfig, error)
 		config.DefaultConfig.TikTokProxy = proxy
 	}
 
-	show, err := newShow(roomURL, cookie)
+	show, err := newShow(roomURL, cookie, sr)
 	if err != nil {
 		return nil, fmt.Errorf("invalid args: %w", err)
 	}
@@ -228,7 +230,7 @@ func newCompositeConfig(roomURL, cookie, proxy string) (*CompositeConfig, error)
 	return cc, nil
 }
 
-func newShow(roomURL, cookie string) (kernel.Show, error) {
+func newShow(roomURL, cookie string, sr string) (kernel.Show, error) {
 	// use olivetv
 	tv, err := olivetv.NewWithURL(roomURL, olivetv.SetCookie(cookie))
 	if err == nil {
@@ -237,6 +239,7 @@ func newShow(roomURL, cookie string) (kernel.Show, error) {
 			StreamerName: site.Name(),
 			Platform:     tv.SiteID,
 			RoomID:       tv.RoomID,
+			SplitRule:    sr,
 		}
 		return show, nil
 	}
@@ -258,6 +261,7 @@ func newShow(roomURL, cookie string) (kernel.Show, error) {
 		Platform:     "streamlink",
 		RoomID:       roomURL,
 		OutTmpl:      "[{{ .StreamerName }}][{{ now | date \"2006-01-02 15-04-05\"}}]",
+		SplitRule:    sr,
 	}
 	return show, nil
 }
